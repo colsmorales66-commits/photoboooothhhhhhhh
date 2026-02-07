@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Booth Result</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        :root {
+            /* This variable controls the size of everything */
+            --frame-size: 250px; 
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #222;
+            background-image: url("bg.jpeg");
+            background-repeat: repeat;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+        }
+
+        .main-wrapper {
+            display: flex;
+            flex-direction: row; 
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        /* --- THE FILM STRIP --- */
+        #mainStrip {
+            /* The width adapts to the frame size + padding */
+            width: calc(var(--frame-size) + 40px);
+            padding: 30px 15px;
+            background-color: black;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            border-left: 12px dotted white;
+            border-right: 12px dotted white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            position: relative;
+            overflow: visible; 
+            transition: width 0.1s ease;
+        }
+
+        .photo-frame {
+            width: var(--frame-size);
+            height: var(--frame-size);
+            background-color: #333;
+            position: relative;
+            overflow: visible;
+            transition: width 0.1s ease, height 0.1s ease;
+        }
+
+        .photo-frame img.user-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Stickers scale with the frame */
+        .corner-gif {
+            position: absolute;
+            width: calc(var(--frame-size) / 4);
+            height: calc(var(--frame-size) / 4);
+            pointer-events: none;
+            display: none; 
+            z-index: 10;
+        }
+        #g1 { top: -15px; left: -15px; }
+        #g2 { bottom: -15px; right: -15px; }
+        #g3 { bottom: -15px; left: -15px; }
+
+        .desc-box-strip {
+            width: 100%;
+            background: white;
+            padding: 15px 5px;
+            border-bottom: 10px solid #ff85a1;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        #stripText { 
+            font-size: 16px; 
+            font-weight: bold; 
+            color: black; 
+            word-wrap: break-word;
+        }
+
+        /* --- THE CONTROLS --- */
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 300px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .label { font-weight: bold; font-size: 14px; color: #333; }
+        
+        /* Slider Styling */
+        .slider {
+            width: 100%;
+            cursor: pointer;
+            accent-color: #ff477e;
+        }
+
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 5px; }
+
+        .circle-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ddd;
+        }
+
+        .gif-choice-btn {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ccc;
+            background: white;
+            cursor: pointer;
+            border-radius: 5px;
+            padding: 2px;
+        }
+        .gif-choice-btn img { width: 100%; height: 100%; object-fit: contain; }
+
+        .input-box { border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: white; }
+        textarea { width: 100%; border: none; outline: none; resize: none; font-family: inherit; }
+
+        .action-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-main {
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 500px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <h2 style="color: white; text-shadow: 2px 2px black; letter-spacing: 2px;">MY RESULT</h2>
+
+    <div class="main-wrapper">
+        <div class="film-strip" id="mainStrip">
+            <div class="photo-frame">
+                <img src="c1.gif" id="g1" class="corner-gif">
+                <img id="pic0" class="user-photo">
+            </div>
+            <div class="photo-frame">
+                <img src="c2.gif" id="g2" class="corner-gif">
+                <img id="pic1" class="user-photo">
+            </div>
+            <div class="photo-frame">
+                <img src="c3.gif" id="g3" class="corner-gif">
+                <img id="pic2" class="user-photo">
+            </div>
+            
+            <div class="desc-box-strip">
+                <div id="stripText">description;</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="label">Adjust Size:</div>
+            <input type="range" min="150" max="400" value="250" class="slider" id="sizeSlider" oninput="resizeStrip(this.value)">
+
+            <div class="label">Strip Color:</div>
+            <div class="btn-group">
+                <div class="circle-btn" style="background: green;" onclick="changeColor('green')"></div>
+                <div class="circle-btn" style="background: red;" onclick="changeColor('red')"></div>
+                <div class="circle-btn" style="background: white;" onclick="changeColor('white')"></div>
+                <div class="circle-btn" style="background: black;" onclick="changeColor('black')"></div>
+                <div class="circle-btn" style="background: blue;" onclick="changeColor('blue')"></div>
+            </div>
+
+            <div class="label">Add Stickers:</div>
+            <div class="btn-group">
+                <button class="gif-choice-btn" onclick="toggleGif(1)"><img src="c1.gif"></button>
+                <button class="gif-choice-btn" onclick="toggleGif(2)"><img src="c2.gif"></button>
+                <button class="gif-choice-btn" onclick="toggleGif(3)"><img src="c3.gif"></button>
+                <button onclick="clearGifs()" style="font-size: 10px; cursor: pointer; border:none; background:none; text-decoration:underline;">Clear All</button>
+            </div>
+
+            <div class="label">Description:</div>
+            <div class="input-box">
+                <textarea id="descInput" placeholder="Write something..." oninput="updateText(this.value)"></textarea>
+            </div>
+            
+            <div class="action-btns">
+                <button class="btn-main" style="background:#ff477e;" onclick="saveToHistory()">SAVE STRIP</button>
+                <button class="btn-main" style="background:#4a90e2;" onclick="location.href='index.html'">RETAKE 📸</button>
+                <button class="btn-main" style="background:#333; grid-column: span 2;" onclick="location.href='collection.html'">COLLECTION 📜</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            document.getElementById('pic0').src = localStorage.getItem('capturedPhoto0') || "";
+            document.getElementById('pic1').src = localStorage.getItem('capturedPhoto1') || "";
+            document.getElementById('pic2').src = localStorage.getItem('capturedPhoto2') || "";
+        };
+
+        // Resizes the boxes dynamically
+        function resizeStrip(val) {
+            document.documentElement.style.setProperty('--frame-size', val + 'px');
+        }
+
+        function changeColor(c) { 
+            document.getElementById('mainStrip').style.backgroundColor = c; 
+        }
+        
+        function toggleGif(num) {
+            const gif = document.getElementById('g' + num);
+            gif.style.display = (gif.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function clearGifs() {
+            document.querySelectorAll('.corner-gif').forEach(g => g.style.display = 'none');
+        }
+
+        function updateText(val) {
+            document.getElementById('stripText').innerText = val || "description;";
+        }
+
+        function saveToHistory() {
+            const strip = document.getElementById('mainStrip');
+            
+            html2canvas(strip, {
+                scale: 2, // 2 is plenty for these bigger sizes
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null 
+            }).then(canvas => {
+                const imageData = canvas.toDataURL("image/png");
+
+                const link = document.createElement('a');
+                link.download = 'my-photostrip-' + Date.now() + '.png';
+                link.href = imageData;
+                link.click();
+
+                let history = JSON.parse(localStorage.getItem('myCollection')) || [];
+                history.push({ id: Date.now(), image: imageData });
+                localStorage.setItem('myCollection', JSON.stringify(history));
+
+                alert("Saved!");
+            });
+        }
+    </script>
+</body>
+</html>

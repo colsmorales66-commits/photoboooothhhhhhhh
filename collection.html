@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ella & Raye's Collection</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    
+    <style>
+        body {
+            background-image: url('bg.jpeg');
+            background-repeat: repeat;
+            background-size: contain;
+            color: white;
+            font-family: 'Fredoka One', cursive;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 { 
+            margin-top: 20px; 
+            font-size: 28px; 
+            color: #ff4d6d; 
+            text-shadow: 2px 2px 0px #fff; 
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 70px 1fr; 
+            gap: 12px;
+            width: 95%;
+            max-width: 600px;
+            margin-top: 10px;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .name-label {
+            text-align: center;
+            font-size: 20px;
+            background: #fff;
+            color: #ff4d6d;
+            padding: 8px;
+            border-radius: 15px;
+            box-shadow: 0 4px 0px #ffb3c1;
+            margin-bottom: 10px;
+        }
+
+        /* The Box Style (Empty and Filled) */
+        .photo-box {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: rgba(255, 255, 255, 0.2);
+            border: 3px dashed #fff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .photo-box:active { transform: scale(0.95); }
+
+        .photo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border: 3px solid white;
+            border-radius: 8px;
+        }
+
+        .plus-icon { font-size: 40px; color: white; opacity: 0.8; }
+
+        .gif-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .center-gif {
+            width: 60px;
+            position: sticky;
+            top: 50px;
+        }
+
+        /* Hidden file input */
+        #fileInput { display: none; }
+    </style>
+</head>
+<body>
+
+    <h1>✨Collections✨</h1>
+
+    <input type="file" id="fileInput" accept="image/*">
+
+    <div class="main-container">
+        <div class="column" id="ella-col">
+            <div class="name-label">Ella</div>
+            <div class="photo-box" onclick="triggerUpload('ella')"><span class="plus-icon">+</span></div>
+            <div class="photo-box" onclick="triggerUpload('ella')"><span class="plus-icon">+</span></div>
+            <div class="photo-box" onclick="triggerUpload('ella')"><span class="plus-icon">+</span></div>
+        </div>
+
+        <div class="gif-column">
+            <img src="sparkles.gif" class="center-gif">
+        </div>
+
+        <div class="column" id="raye-col">
+            <div class="name-label">Raye</div>
+            <div class="photo-box" onclick="triggerUpload('raye')"><span class="plus-icon">+</span></div>
+            <div class="photo-box" onclick="triggerUpload('raye')"><span class="plus-icon">+</span></div>
+            <div class="photo-box" onclick="triggerUpload('raye')"><span class="plus-icon">+</span></div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCAvI-nQQhQupedGz0WWo1HkJeWAidUAfk",
+            authDomain: "photobooth-8c993.firebaseapp.com",
+            databaseURL: "https://photobooth-8c993-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "photobooth-8c993",
+            storageBucket: "photobooth-8c993.firebasestorage.app",
+            messagingSenderId: "988328424846",
+            appId: "1:988328424846:web:d82e4c1ef79bfab466e0df"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let currentTarget = '';
+
+        function triggerUpload(person) {
+            currentTarget = person;
+            document.getElementById('fileInput').click();
+        }
+
+        document.getElementById('fileInput').onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const base64Image = event.target.result;
+                
+                // Save to Firebase under the correct person
+                const newPhotoRef = db.ref('shared_collection').push();
+                newPhotoRef.set({
+                    image: base64Image,
+                    owner: currentTarget,
+                    timestamp: Date.now()
+                });
+            };
+            reader.readAsDataURL(file);
+        };
+
+        // Live update the boxes
+        db.ref('shared_collection').on('value', (snap) => {
+            const data = snap.val();
+            if(!data) return;
+
+            // Clear extra boxes to redraw
+            const ellaCol = document.getElementById('ella-col');
+            const rayeCol = document.getElementById('raye-col');
+            
+            // Filter photos by owner
+            const photos = Object.values(data);
+            
+            // Logic to fill boxes goes here... (Simplified for now: it adds a new box for every photo)
+            renderPhotos('ella', ellaCol, photos);
+            renderPhotos('raye', rayeCol, photos);
+        });
+
+        function renderPhotos(name, container, photos) {
+            container.innerHTML = `<div class="name-label">${name.charAt(0).toUpperCase() + name.slice(1)}</div>`;
+            const myPhotos = photos.filter(p => p.owner === name);
+            
+            // Add actual photos
+            myPhotos.forEach(p => {
+                const div = document.createElement('div');
+                div.className = "photo-box";
+                div.innerHTML = `<img src="${p.image}">`;
+                container.appendChild(div);
+            });
+
+            // Always keep 3 empty boxes at the bottom for more uploads
+            for(let i=0; i<3; i++) {
+                const empty = document.createElement('div');
+                empty.className = "photo-box";
+                empty.innerHTML = `<span class="plus-icon">+</span>`;
+                empty.onclick = () => triggerUpload(name);
+                container.appendChild(empty);
+            }
+        }
+    </script>
+</body>
+</html>
