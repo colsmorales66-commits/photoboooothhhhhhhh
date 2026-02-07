@@ -13,87 +13,92 @@
             background: url("bg.jpeg") repeat;
             background-size: auto;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* Top Right Collection Button */
+        /* Front Camera Mirror Style for the Button */
         .collection-btn {
             position: fixed;
-            top: 15px;
-            right: 15px;
-            background: #ffecf2;
-            border: 2px solid #ff85a1;
-            padding: 8px 15px;
-            border-radius: 25px;
+            top: 20px;
+            right: 20px;
+            background: #fff0f5;
+            border: 3px solid #ff85a1;
+            padding: 12px 20px;
+            border-radius: 30px;
             text-decoration: none;
             color: #ff4d6d;
-            font-weight: bold;
-            font-size: 16px;
+            font-weight: 800;
+            font-size: 18px; /* Bigger for phone */
             z-index: 1000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 15px rgba(255, 133, 161, 0.4);
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
         }
 
-        .container { padding: 50px 15px 15px 15px; } /* Extra top padding for the button */
-        #topGif { width: 140px; margin-bottom: 5px; border-radius: 15px; }
+        .container { padding: 80px 15px 20px 15px; } 
 
         .boxes {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
-            margin: 15px 0;
+            gap: 20px;
+            margin: 20px 0;
         }
 
-        @media (min-width: 600px) {
-            .boxes { flex-direction: row; justify-content: center; }
-        }
-
+        /* Large boxes for phone height */
         .box {
-            width: 200px; height: 260px;  
-            border: 4px solid black;
-            background: #333; 
+            width: 240px; 
+            height: 320px;  
+            border: 5px solid #333;
+            background: #222; 
             overflow: hidden;
             position: relative;
-            border-radius: 10px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
         }
 
-        .box img, .box video {
-            width: 100%; height: 100%;
+        /* THE REFLECTION MAGIC */
+        .box video, .box img {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
-            display: none; 
+            transform: scaleX(-1); /* This flips it like a front camera! */
         }
-
-        .mirror { transform: scaleX(-1); }
 
         .del-btn {
             position: absolute;
-            top: 8px; right: 8px;
-            background: red; color: white;
+            top: 10px; right: 10px;
+            background: #ff4d6d; color: white;
             border: 2px solid white; border-radius: 50%;
-            width: 30px; height: 30px;
+            width: 35px; height: 35px;
             font-weight: bold; cursor: pointer;
-            display: none; z-index: 20;
+            z-index: 20; display: none;
+            font-size: 18px;
         }
 
         #text {
-            font-size: 32px; font-weight: bold;
-            margin: 20px 0; color: #333;
+            font-size: 38px; /* Huge font for easy reading */
+            font-weight: 900;
+            margin: 25px 0;
+            color: #333;
+            text-transform: uppercase;
         }
 
         .buttons {
             display: flex; justify-content: center;
-            gap: 15px; margin-top: 10px;
+            padding-bottom: 40px;
         }
 
-        #photoBtn { width: 130px; cursor: pointer; border-radius: 20px; }
+        #photoBtn { width: 140px; cursor: pointer; transition: transform 0.2s; }
+        #photoBtn:active { transform: scale(0.9); }
 
         #resultBtn {
-            padding: 15px 25px; font-size: 20px; cursor: pointer;
-            border: none; border-radius: 15px;
-            background: #000; color: white;
-            display: none; align-items: center; gap: 8px;
+            padding: 18px 30px; font-size: 22px; cursor: pointer;
+            border: none; border-radius: 50px;
+            background: #333; color: white;
+            display: none; align-items: center; gap: 10px;
+            font-weight: bold;
         }
 
         #flash {
@@ -102,6 +107,8 @@
             background: white; opacity: 0;
             pointer-events: none; z-index: 9999;
         }
+
+        video#hidden-stream { display: none; }
     </style>
 </head>
 
@@ -113,34 +120,34 @@
 </a>
 
 <div class="container">
-    <img id="topGif" src="c1.gif">
+    <img id="topGif" src="c1.gif" style="width: 160px; border-radius: 20px;">
 
     <div class="boxes">
         <div class="box" id="box0">
-            <button class="del-btn" onclick="clearPhoto(0)">X</button>
+            <button class="del-btn" id="del0" onclick="clearPhoto(0)">✕</button>
             <img id="img0">
         </div>
         <div class="box" id="box1">
-            <button class="del-btn" onclick="clearPhoto(1)">X</button>
+            <button class="del-btn" id="del1" onclick="clearPhoto(1)">✕</button>
             <img id="img1">
         </div>
         <div class="box" id="box2">
-            <button class="del-btn" onclick="clearPhoto(2)">X</button>
+            <button class="del-btn" id="del2" onclick="clearPhoto(2)">✕</button>
             <img id="img2">
         </div>
     </div>
 
-    <div id="text">Ready? 😁</div>
+    <div id="text">GET READY! 📸</div>
 
     <div class="buttons">
         <img id="photoBtn" src="Button.gif">
         <button id="resultBtn">
-            <img src="cat.gif" width="25"> SEE RESULT
+            <img src="cat.gif" width="30"> VIEW RESULT
         </button>
     </div>
 </div>
 
-<video id="video" autoplay playsinline muted class="mirror"></video>
+<video id="video" autoplay playsinline muted></video>
 <canvas id="canvas" style="display:none;"></canvas>
 
 <script>
@@ -150,7 +157,6 @@ const btn = document.getElementById("photoBtn");
 const resultBtn = document.getElementById("resultBtn");
 const textDisplay = document.getElementById("text");
 const flash = document.getElementById("flash");
-const topGif = document.getElementById("topGif");
 
 const boxes = [
     document.getElementById("img0"),
@@ -163,7 +169,7 @@ let isCounting = false;
 
 function startCamera() {
     navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "user" } 
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
     })
     .then(stream => { 
         video.srcObject = stream;
@@ -172,11 +178,12 @@ function startCamera() {
             updatePreview();
         };
     })
-    .catch((err) => { 
-        textDisplay.textContent = "Camera Error! ❌";
+    .catch(() => { 
+        textDisplay.textContent = "Check Camera! ❌";
     });
 }
 
+// Moves the camera feed to the box you are currently on
 function updatePreview() {
     if (currentBox < 3) {
         const targetBox = document.getElementById("box" + currentBox);
@@ -201,7 +208,7 @@ btn.addEventListener("click", () => {
             textDisplay.textContent = count;
         } else {
             clearInterval(countdown);
-            textDisplay.textContent = "CHEEEESE!! 📸";
+            textDisplay.textContent = "SMILE!! 😁";
             setTimeout(() => {
                 flashEffect();
                 takePhoto();
@@ -216,11 +223,13 @@ function flashEffect() {
 }
 
 function takePhoto() {
-    const w = video.videoWidth || 640;
-    const h = video.videoHeight || 480;
+    const w = video.videoWidth;
+    const h = video.videoHeight;
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext("2d");
+    
+    // This saves the photo ALREADY MIRRORED so it matches the preview
     ctx.translate(w, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, w, h);
@@ -228,29 +237,30 @@ function takePhoto() {
     const imageData = canvas.toDataURL("image/png");
     boxes[currentBox].src = imageData;
     boxes[currentBox].style.display = "block";
-    document.querySelectorAll('.del-btn')[currentBox].style.display = "block";
+    document.getElementById("del" + currentBox).style.display = "block";
     
     currentBox++;
     isCounting = false;
-    textDisplay.textContent = "Nice Shot! 😎";
+    textDisplay.textContent = "LOVE IT! ✨";
 
     if (currentBox === 3) {
         btn.style.display = "none";
         resultBtn.style.display = "flex";
-        textDisplay.textContent = "Perfect! ✨";
+        textDisplay.textContent = "ALL DONE! 💕";
     }
     updatePreview();
 }
 
 function clearPhoto(index) {
-    if(!confirm("Delete this one?")) return;
+    if(!confirm("Want to retake this one?")) return;
     boxes[index].src = "";
     boxes[index].style.display = "none";
-    document.querySelectorAll('.del-btn')[index].style.display = "none";
+    document.getElementById("del" + index).style.display = "none";
+    
     currentBox = index; 
     btn.style.display = "block";
     resultBtn.style.display = "none";
-    textDisplay.textContent = "Ready?";
+    textDisplay.textContent = "READY?";
     updatePreview();
 }
 
