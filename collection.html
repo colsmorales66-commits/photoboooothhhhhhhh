@@ -56,7 +56,6 @@
             margin-bottom: 10px;
         }
 
-        /* The Box Style (Empty and Filled) */
         .photo-box {
             width: 100%;
             aspect-ratio: 1 / 1;
@@ -72,8 +71,6 @@
             transition: transform 0.2s;
         }
 
-        .photo-box:active { transform: scale(0.95); }
-
         .photo-box img {
             width: 100%;
             height: 100%;
@@ -82,47 +79,49 @@
             border-radius: 8px;
         }
 
-        .plus-icon { font-size: 40px; color: white; opacity: 0.8; }
-
-        .gif-column {
+        /* --- NEW DELETE BUTTON STYLE --- */
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ff4d6d;
+            color: white;
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
             display: flex;
-            flex-direction: column;
             align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        .center-gif {
-            width: 60px;
-            position: sticky;
-            top: 50px;
-        }
+        .delete-btn:hover { background: #ff002b; }
 
-        /* Hidden file input */
+        .plus-icon { font-size: 40px; color: white; opacity: 0.8; }
+        .gif-column { display: flex; flex-direction: column; align-items: center; }
+        .center-gif { width: 60px; position: sticky; top: 50px; }
         #fileInput { display: none; }
     </style>
 </head>
 <body>
 
     <h1>✨Collections✨</h1>
-
     <input type="file" id="fileInput" accept="image/*">
 
     <div class="main-container">
         <div class="column" id="ella-col">
             <div class="name-label">Ella</div>
-            <div class="photo-box" onclick="triggerUpload('ella')"><span class="plus-icon">+</span></div>
-            <div class="photo-box" onclick="triggerUpload('ella')"><span class="plus-icon">+</span></div>
-            <div class="photo-box" onclick="triggerUpload('ella')"><span class="plus-icon">+</span></div>
         </div>
-
         <div class="gif-column">
-            <img src="sparkles.gif" class="center-gif">
+            <img src="cat.gif" class="center-gif">
         </div>
-
         <div class="column" id="raye-col">
             <div class="name-label">Raye</div>
-            <div class="photo-box" onclick="triggerUpload('raye')"><span class="plus-icon">+</span></div>
-            <div class="photo-box" onclick="triggerUpload('raye')"><span class="plus-icon">+</span></div>
-            <div class="photo-box" onclick="triggerUpload('raye')"><span class="plus-icon">+</span></div>
         </div>
     </div>
 
@@ -146,6 +145,12 @@
             document.getElementById('fileInput').click();
         }
 
+        function deletePhoto(photoId) {
+            if(confirm("Delete this photo?")) {
+                db.ref('shared_collection/' + photoId).remove();
+            }
+        }
+
         document.getElementById('fileInput').onchange = function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -153,8 +158,6 @@
             const reader = new FileReader();
             reader.onload = function(event) {
                 const base64Image = event.target.result;
-                
-                // Save to Firebase under the correct person
                 const newPhotoRef = db.ref('shared_collection').push();
                 newPhotoRef.set({
                     image: base64Image,
@@ -165,36 +168,37 @@
             reader.readAsDataURL(file);
         };
 
-        // Live update the boxes
         db.ref('shared_collection').on('value', (snap) => {
-            const data = snap.val();
-            if(!data) return;
-
-            // Clear extra boxes to redraw
+            const data = snap.val() || {}; // Use empty object if no data
             const ellaCol = document.getElementById('ella-col');
             const rayeCol = document.getElementById('raye-col');
             
-            // Filter photos by owner
-            const photos = Object.values(data);
-            
-            // Logic to fill boxes goes here... (Simplified for now: it adds a new box for every photo)
-            renderPhotos('ella', ellaCol, photos);
-            renderPhotos('raye', rayeCol, photos);
+            // Pass the whole data object so we have access to the IDs (keys)
+            renderPhotos('ella', ellaCol, data);
+            renderPhotos('raye', rayeCol, data);
         });
 
-        function renderPhotos(name, container, photos) {
+        function renderPhotos(name, container, data) {
             container.innerHTML = `<div class="name-label">${name.charAt(0).toUpperCase() + name.slice(1)}</div>`;
-            const myPhotos = photos.filter(p => p.owner === name);
             
-            // Add actual photos
-            myPhotos.forEach(p => {
+            // Convert Firebase object into an array with IDs
+            const photoList = Object.keys(data).map(key => ({
+                id: key,
+                ...data[key]
+            })).filter(p => p.owner === name);
+            
+            // Render Photos with "X" button
+            photoList.forEach(p => {
                 const div = document.createElement('div');
                 div.className = "photo-box";
-                div.innerHTML = `<img src="${p.image}">`;
+                div.innerHTML = `
+                    <div class="delete-btn" onclick="deletePhoto('${p.id}')">X</div>
+                    <img src="${p.image}">
+                `;
                 container.appendChild(div);
             });
 
-            // Always keep 3 empty boxes at the bottom for more uploads
+            // Keep 3 empty boxes
             for(let i=0; i<3; i++) {
                 const empty = document.createElement('div');
                 empty.className = "photo-box";
