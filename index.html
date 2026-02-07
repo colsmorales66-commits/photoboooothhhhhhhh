@@ -10,11 +10,49 @@
             margin: 0; padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             text-align: center;
-            background: #f0f0f0; /* Replace with your bg.jpeg if available */
+            background: #fdf2f8; /* Soft pinkish bg */
             min-height: 100vh;
         }
 
-        .container { padding: 20px; }
+        /* Top Right Section */
+        .top-right-menu {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+            z-index: 100;
+        }
+
+        #collectionBtn {
+            background: #ff85a2;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255, 133, 162, 0.3);
+            transition: transform 0.2s ease;
+            font-size: 14px;
+        }
+
+        #collectionBtn:hover {
+            transform: scale(1.05);
+            background: #ff4d7d;
+        }
+
+        .watermark {
+            font-size: 11px;
+            color: #888;
+            font-style: italic;
+            letter-spacing: 0.5px;
+            margin-right: 5px;
+        }
+
+        .container { padding: 40px 20px 20px 20px; }
         #topGif { width: 150px; margin-bottom: 10px; border-radius: 15px; }
 
         .boxes {
@@ -35,17 +73,13 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        /* The Live Preview & Captured Image styles */
         .box video, .box img {
             width: 100%; height: 100%;
             object-fit: cover;
             display: none;
         }
 
-        /* This makes the live preview look like a mirror */
-        .mirror {
-            transform: scaleX(-1);
-        }
+        .mirror { transform: scaleX(-1); }
 
         .del-btn {
             position: absolute;
@@ -76,17 +110,15 @@
         }
 
         #photoBtn { width: 100px; cursor: pointer; transition: transform 0.2s; }
-        #photoBtn:active { transform: scale(0.9); }
 
         #resultBtn {
             padding: 12px 24px; font-size: 18px; cursor: pointer;
             border: none; border-radius: 50px;
-            background: #007AFF; color: white;
+            background: #333; color: white;
             display: none; align-items: center; gap: 8px;
             font-weight: bold;
         }
 
-        /* Hidden main video for processing */
         #video { position: fixed; opacity: 0; pointer-events: none; }
 
         #flash {
@@ -94,13 +126,17 @@
             width: 100%; height: 100%;
             background: white; opacity: 0;
             pointer-events: none; z-index: 9999;
-            transition: opacity 0.1s;
         }
     </style>
 </head>
 
 <body>
 <div id="flash"></div>
+
+<div class="top-right-menu">
+    <button id="collectionBtn" onclick="location.href='collection.html'">Collection 💕</button>
+    <div class="watermark">-program by colss #forus</div>
+</div>
 
 <div class="container">
     <img id="topGif" src="c1.gif">
@@ -135,6 +171,7 @@
 <canvas id="canvas" style="display:none;"></canvas>
 
 <script>
+// (All the camera/photo logic remains the same as previous)
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const btn = document.getElementById("photoBtn");
@@ -143,40 +180,25 @@ const textDisplay = document.getElementById("text");
 const flash = document.getElementById("flash");
 const topGif = document.getElementById("topGif");
 
-const imgElements = [
-    document.getElementById("img0"),
-    document.getElementById("img1"),
-    document.getElementById("img2")
-];
-
-const videoPreviews = [
-    document.getElementById("view0"),
-    document.getElementById("view1"),
-    document.getElementById("view2")
-];
+const imgElements = [document.getElementById("img0"), document.getElementById("img1"), document.getElementById("img2")];
+const videoPreviews = [document.getElementById("view0"), document.getElementById("view1"), document.getElementById("view2")];
 
 let currentBox = 0;
 let isCounting = false;
 let globalStream = null;
 
-// Start camera and feed it to the first box
 async function startCamera() {
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: "user" } 
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
         globalStream = stream;
         video.srcObject = stream;
-        
         updateLivePreviews();
         textDisplay.textContent = "Ready? 😁";
     } catch (err) {
         textDisplay.textContent = "Camera Blocked! ❌";
-        console.error(err);
     }
 }
 
-// Shows live camera in the current active box
 function updateLivePreviews() {
     videoPreviews.forEach((v, i) => {
         if (i === currentBox) {
@@ -192,23 +214,16 @@ function updateLivePreviews() {
 
 btn.addEventListener("click", () => {
     if (isCounting || currentBox >= 3) return;
-
     isCounting = true;
     let count = 3;
     textDisplay.textContent = count;
-    
     const countdown = setInterval(() => {
         count--;
-        if (count > 0) {
-            textDisplay.textContent = count;
-        } else {
+        if (count > 0) { textDisplay.textContent = count; } 
+        else {
             clearInterval(countdown);
             textDisplay.textContent = "CHEEEESE!! 📸";
-            
-            setTimeout(() => {
-                flashEffect();
-                takePhoto();
-            }, 400);
+            setTimeout(() => { flashEffect(); takePhoto(); }, 400);
         }
     }, 800);
 });
@@ -221,60 +236,43 @@ function flashEffect() {
 function takePhoto() {
     const w = video.videoWidth;
     const h = video.videoHeight;
-    canvas.width = w;
-    canvas.height = h;
+    canvas.width = w; canvas.height = h;
     const ctx = canvas.getContext("2d");
-    
-    // Mirror the capture
-    ctx.translate(w, 0);
-    ctx.scale(-1, 1);
+    ctx.translate(w, 0); ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, w, h);
-
     const imageData = canvas.toDataURL("image/png");
     
-    // Save photo and switch from Video to Image in that box
     localStorage.setItem("capturedPhoto" + currentBox, imageData);
-    
     videoPreviews[currentBox].style.display = "none";
     videoPreviews[currentBox].srcObject = null;
-    
     imgElements[currentBox].src = imageData;
     imgElements[currentBox].style.display = "block";
     document.querySelectorAll('.del-btn')[currentBox].style.display = "block";
     
     currentBox++;
     isCounting = false;
-
     if (currentBox < 3) {
         textDisplay.textContent = "Next one! 😎";
         updateLivePreviews();
     } else {
         btn.style.display = "none";
         resultBtn.style.display = "flex";
-        textDisplay.textContent = "Looking good!";
-        topGif.src = "cat.gif"; // Assuming you have this gif
+        textDisplay.textContent = "Perfect! ❤️";
     }
 }
 
 function clearPhoto(index) {
     if(!confirm("Retake this photo?")) return;
-    
     localStorage.removeItem("capturedPhoto" + index);
     imgElements[index].style.display = "none";
     document.querySelectorAll('.del-btn')[index].style.display = "none";
-    
-    // Reset to this box
     currentBox = index;
     btn.style.display = "block";
     resultBtn.style.display = "none";
     updateLivePreviews();
 }
 
-resultBtn.addEventListener("click", () => {
-    window.location.href = "result.html"; 
-});
-
-// Init
+resultBtn.addEventListener("click", () => { window.location.href = "result.html"; });
 startCamera();
 </script>
 </body>
